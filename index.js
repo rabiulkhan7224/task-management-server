@@ -76,12 +76,46 @@ async function run() {
         });
 
         // Delete Task
-        app.delete("/api/tasks/:id", async (req, res) => {
-            const { id } = req.params;
-            await tasksCollection.deleteOne({ _id: new ObjectId(id) });
-            res.json({ message: "Task deleted" });
-        });
+app.delete("/api/tasks/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = await tasksCollection.deleteOne({ _id: new ObjectId(id) });
+  
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+  
+      res.json({ message: "Task deleted" });
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      res.status(500).json({ message: "Error deleting task", error });
+    }
+  });
 
+  // Reorder Tasks (Drag & Drop)
+app.put("/api/tasks/reorder", async (req, res) => {
+    try {
+      const { tasks } = req.body;
+  
+      if (!tasks || !Array.isArray(tasks)) {
+        return res.status(400).json({ message: "Invalid task data" });
+      }
+  
+      const bulkOps = tasks.map((task, index) => ({
+        updateOne: {
+          filter: { _id: new ObjectId(task._id) },
+          update: { $set: { order: index, category: task.category } },
+        },
+      }));
+  
+      await tasksCollection.bulkWrite(bulkOps);
+      res.json({ message: "Tasks reordered successfully" });
+    } catch (error) {
+      console.error("Error reordering tasks:", error);
+      res.status(500).json({ message: "Error reordering tasks", error });
+    }
+  });
+  
 
 
         // Send a ping to confirm a successful connection
