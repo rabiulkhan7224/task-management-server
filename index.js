@@ -55,26 +55,33 @@ async function run() {
         });
         app.put("/api/tasks/:id", async (req, res) => {
             try {
-              const { id } = req.params;
-              const updatedTask = req.body;
-              
-          
-              
-              delete updatedTask._id;
-          
-              const result = await tasksCollection.updateOne(
-                { _id: new ObjectId(id) },
-                { $set: updatedTask },
-                { upsert: true }
-              );
-              
-          
-              res.json({ message: "Task updated", result });
+                const { id } = req.params;
+                const updatedTask = req.body;
+
+
+
+                delete updatedTask._id;
+
+                const result = await tasksCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updatedTask },
+                    { upsert: true }
+                );
+
+
+                res.json({ message: "Task updated", result });
             } catch (error) {
-              res.status(500).json({ message: "Error updating task", error });
+                res.status(500).json({ message: "Error updating task", error });
             }
-          });
-          
+        });
+
+        // Delete Task
+        app.delete("/api/tasks/:id", async (req, res) => {
+            const { id } = req.params;
+            await tasksCollection.deleteOne({ _id: new ObjectId(id) });
+            res.json({ message: "Task deleted" });
+        });
+
 
 
         // Send a ping to confirm a successful connection
