@@ -31,8 +31,24 @@ async function run() {
     const database = client.db("taskManager");
 const tasksCollection = database.collection("tasks");
 
+// Add Task
+app.post("/api/tasks", async (req, res) => {
+    const { title, description, category } = req.body;
+    const count = await tasksCollection.countDocuments();
+    const newTask = {
+      title,
+      description,
+      category,
+      timestamp: new Date(),
+      order: count, // Order is based on count to maintain order
+    };
+    const result = await tasksCollection.insertOne(newTask);
+    res.json({ ...newTask, _id: result.insertedId });
+  });
+
+
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
@@ -46,6 +62,6 @@ app.get('/',(req,res)=>{
 })
 
 app.listen(PORT, async () => {
-  await client.connect();
+//   await client.connect();
   console.log(`Server running on port ${PORT}`);
 });
