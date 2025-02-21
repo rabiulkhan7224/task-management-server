@@ -31,6 +31,14 @@ async function run() {
     const database = client.db("taskManager");
 const tasksCollection = database.collection("tasks");
 
+
+// Get All Tasks
+app.get("/api/tasks", async (req, res) => {
+    const tasks = await tasksCollection.find().sort({ order: 1 }).toArray();
+    res.json(tasks);
+  });
+  
+
 // Add Task
 app.post("/api/tasks", async (req, res) => {
     const { title, description, category } = req.body;
