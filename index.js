@@ -34,25 +34,39 @@ async function run() {
 
         // Get All Tasks
         app.get("/api/tasks", async (req, res) => {
-            const tasks = await tasksCollection.find().sort({ order: 1 }).toArray();
-            res.json(tasks);
+            try {
+                const tasks = await tasksCollection.find().sort({ order: 1 }).toArray();
+                res.json(tasks);
+            } catch (error) {
+                console.error("Error fetching tasks:", error);
+                res.status(500).json({ message: "Error fetching tasks", error });
+            }
         });
-
 
         // Add Task
         app.post("/api/tasks", async (req, res) => {
-            const { title, description, category } = req.body;
-            const count = await tasksCollection.countDocuments();
-            const newTask = {
-                title,
-                description,
-                category,
-                timestamp: new Date(),
-                order: count, // Order is based on count to maintain order
-            };
-            const result = await tasksCollection.insertOne(newTask);
-            res.json({ ...newTask, _id: result.insertedId });
+            try {
+                const { title, description, category } = req.body;
+                const count = await tasksCollection.countDocuments();
+                const newTask = {
+                    title,
+                    description,
+                    category,
+                    timestamp: new Date(),
+                    order: count, // Maintain order
+                };
+
+                const result = await tasksCollection.insertOne(newTask);
+                res.status(201).json({ ...newTask, _id: result.insertedId });
+            } catch (error) {
+                console.error("Error adding task:", error);
+                res.status(500).json({ message: "Error adding task", error });
+            }
         });
+
+
+
+
         app.put("/api/tasks/:id", async (req, res) => {
             try {
                 const { id } = req.params;
@@ -76,46 +90,46 @@ async function run() {
         });
 
         // Delete Task
-app.delete("/api/tasks/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const result = await tasksCollection.deleteOne({ _id: new ObjectId(id) });
-  
-      if (result.deletedCount === 0) {
-        return res.status(404).json({ message: "Task not found" });
-      }
-  
-      res.json({ message: "Task deleted" });
-    } catch (error) {
-      console.error("Error deleting task:", error);
-      res.status(500).json({ message: "Error deleting task", error });
-    }
-  });
+        app.delete("/api/tasks/:id", async (req, res) => {
+            try {
+                const { id } = req.params;
+                const result = await tasksCollection.deleteOne({ _id: new ObjectId(id) });
 
-  // Reorder Tasks (Drag & Drop)
-app.put("/api/tasks/reorder", async (req, res) => {
-    try {
-      const { tasks } = req.body;
-  
-      if (!tasks || !Array.isArray(tasks)) {
-        return res.status(400).json({ message: "Invalid task data" });
-      }
-  
-      const bulkOps = tasks.map((task, index) => ({
-        updateOne: {
-          filter: { _id: new ObjectId(task._id) },
-          update: { $set: { order: index, category: task.category } },
-        },
-      }));
-  
-      await tasksCollection.bulkWrite(bulkOps);
-      res.json({ message: "Tasks reordered successfully" });
-    } catch (error) {
-      console.error("Error reordering tasks:", error);
-      res.status(500).json({ message: "Error reordering tasks", error });
-    }
-  });
-  
+                if (result.deletedCount === 0) {
+                    return res.status(404).json({ message: "Task not found" });
+                }
+
+                res.json({ message: "Task deleted" });
+            } catch (error) {
+                console.error("Error deleting task:", error);
+                res.status(500).json({ message: "Error deleting task", error });
+            }
+        });
+
+        // Reorder Tasks (Drag & Drop)
+        app.put("/api/tasks/reorder", async (req, res) => {
+            try {
+                const { tasks } = req.body;
+
+                if (!tasks || !Array.isArray(tasks)) {
+                    return res.status(400).json({ message: "Invalid task data" });
+                }
+
+                const bulkOps = tasks.map((task, index) => ({
+                    updateOne: {
+                        filter: { _id: new ObjectId(task._id) },
+                        update: { $set: { order: index, category: task.category } },
+                    },
+                }));
+
+                await tasksCollection.bulkWrite(bulkOps);
+                res.json({ message: "Tasks reordered successfully" });
+            } catch (error) {
+                console.error("Error reordering tasks:", error);
+                res.status(500).json({ message: "Error reordering tasks", error });
+            }
+        });
+
 
 
         // Send a ping to confirm a successful connection
